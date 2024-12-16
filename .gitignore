@@ -30,6 +30,7 @@ data/*.csv
 data/*.tsv
 data/*.xlsx
 data/*.rds
+data/*.mtx
 
 # Logs
 *.log
