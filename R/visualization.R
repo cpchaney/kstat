@@ -74,7 +74,7 @@ plotThresholdedSignal <- function(spatial_signal, signal_identifier, height, wid
 
   # Extract signal coordinates
   signal_table <- getSignalCoordinates(signal_identifier, binary_signal, height, width) %>%
-    filter(magnitude > 0)
+    dplyr::filter(magnitude > 0)
 
   channel_color_scale <- setNames(col, signal_identifier)
 

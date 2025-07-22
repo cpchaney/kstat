@@ -89,25 +89,31 @@ getLandmarkSignal <- function(landmark, readsFile, height) {
   return(subset(reads, gene == landmark))
 }
 
-getSpatialSignal <- function(signal, cell.probabilities, mapped.bins = NULL, log = TRUE) {
+getSpatialSignal <- function(signal, cell_probabilities, mapped.bins = NULL, log = TRUE) {
   # Calculate weighted signal
   if (log) {
-    weighted.signal <- log(((exp(signal) - 1) %*% cell.probabilities) + 1)
+    weighted_signal <- log(((exp(signal) - 1) %*% cell_probabilities) + 1)
   } else {
-    weighted.signal <- signal %*% cell.probabilities
+    weighted_signal <- signal %*% cell_probabilities
   }
 
   # Adjust for mapped bins if provided
   if (!is.null(mapped.bins)) {
-    weighted.signal <- weighted.signal[, mapped.bins, drop = FALSE]
+    weighted_signal <- weighted_signal[, mapped.bins, drop = FALSE]
   }
 
   # Normalize signal
-  weighted.signal <- weighted.signal * (rowMaxs(as.matrix(signal)) / rowMaxs(as.matrix(weighted.signal)))
-  return(weighted.signal)
+  if (is.null(dim(signal))) {
+    weighted_signal <- weighted_signal * max(signal) / max(weighted_signal)
+  } else {
+    weighted_signal <- weighted_signal * (rowMaxs(as.matrix(signal)) / rowMaxs(as.matrix(weighted_signal)))
+  }
+
+  return(weighted_signal)
 }
 
 gaussianBlur <- function(spatial_signal, height, width, sigma = 1) {
+  ski <- import("skimage")
   # Convert signal into a matrix
   spatial_matrix <- matrix(spatial_signal, nrow = height, ncol = width, byrow = TRUE)
 
@@ -115,8 +121,10 @@ gaussianBlur <- function(spatial_signal, height, width, sigma = 1) {
   blurred <- ski$filters$gaussian(spatial_matrix, sigma = sigma)
 
   # Normalize and return
-  blurred <- blurred * (rowMaxs(as.matrix(spatial_signal)) / rowMaxs(blurred))
-  return(as.numeric(blurred))
+  row_maximums <- rowMaxs(blurred)
+  row_maximums[row_maximums == 0] <- 1
+  blurred <- blurred * (rowMaxs(as.matrix(spatial_signal)) / row_maximums)
+  return(as.numeric(t(blurred)))
 }
 
 splitMatrixIntoTiles <- function(matrix, tile_size) {
