@@ -32,6 +32,9 @@ data/*.xlsx
 data/*.rds
 data/*.mtx
 
+# Generated images
+image/
+
 # Logs
 *.log
 
