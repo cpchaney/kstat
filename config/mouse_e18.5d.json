@@ -1,6 +1,7 @@
 {
-    "project_root": "t",
+    "project_root": "/home/DX6/carrolllab/cchan4/research/kstat/",
     "experiment_name": "mouse_e18.5d",
+    "stage": "e18.5d",
     "scale_factor": 16,
     "reads_file": "cartana_1b_4_e18.5d_high.csv",
     "original_background_image": "mouse_e18.5d_dapi.jpg",
