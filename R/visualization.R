@@ -5,9 +5,31 @@ library(imager)
 library(viridis)
 library(dplyr)
 
+customSpatialTheme <- function(plot_legend) {
+  theme_bw() +
+    theme(
+      panel.border = element_blank(),
+      panel.grid = element_blank(),
+      panel.background = element_rect(fill = "black"),
+      axis.line = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      axis.title = element_blank(),
+      plot.margin = margin(t = 0, r = 0, b = -4, l = -4),
+      legend.background = element_rect(fill = "black"),
+      legend.key = element_rect(fill = "black"),
+      legend.text = element_text(size = 24, colour = "white"),
+      legend.title = element_blank(),
+      legend.position = if (plot_legend) c(1, 0) else "none",
+      legend.justification = c(1, 0)
+    )
+}
+
 # Helper function for loading and transforming the background image
 loadBackgroundImage <- function(background_file, coord_flip) {
-  if (is.null(background_file)) return(NULL)
+  if (is.null(background_file)) {
+    return(NULL)
+  }
 
   background_image <- jpeg::readJPEG(background_file)
 
@@ -36,25 +58,10 @@ getSpatialPlot <- function(signal_table, point_size, channel_color_scale, height
   }
 
   # Add signal points and customize plot appearance
-  p <- p +
-    geom_point(aes(colour = channel), alpha = alpha, size = point_size, stroke = 0) +
+  p <- p + geom_point(aes(colour = channel), alpha = alpha, size = point_size, stroke = 0) +
     scale_color_manual(values = channel_color_scale) +
-    guides(color = guide_legend(override.aes = list(size = 8))) +
-    theme_bw() +
-    theme(panel.border = element_blank(),
-          panel.grid = element_blank(),
-          panel.background = element_rect(fill = 'black'),
-          axis.line = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title = element_blank(),
-          plot.margin = margin(t = 0, r = 0, b = -4, l = -4),
-          legend.background = element_rect(fill = 'black'),
-          legend.key = element_rect(fill = "black"),
-          legend.text = element_text(size = 24, colour = 'white'),
-          legend.title = element_blank(),
-          legend.position = if (plot_legend) c(1, 0) else "none",
-          legend.justification = c(1, 0))
+    guides(color = guide_legend(override.aes = list(size = 8)))
+  p <- p + customSpatialTheme(plot_legend)
 
   return(p)
 }
@@ -62,7 +69,7 @@ getSpatialPlot <- function(signal_table, point_size, channel_color_scale, height
 # Function to threshold and plot a spatial signal
 plotThresholdedSignal <- function(spatial_signal, signal_identifier, height, width,
                                   background_file = NULL, percentile = 95, denoise = TRUE,
-                                  point_size = 0.5, alpha = 0.5, plot_legend = TRUE, col = 'red') {
+                                  point_size = 0.5, alpha = 0.5, plot_legend = TRUE, col = "red") {
   if (denoise) {
     spatial_signal <- gaussianBlur(spatial_signal, height = height, width = width)
   }
@@ -125,7 +132,7 @@ plotThresholdedSignals <- function(spatial_signals, height, width, percentiles =
   # Combine signal data into a single table
   signal_table <- do.call(rbind, lapply(seq_along(signal_identifiers), function(i) {
     getSignalCoordinates(signal_identifiers[i], binary_signals[, i], height, width) %>%
-      filter(magnitude > 0)
+      dplyr::filter(magnitude > 0)
   }))
 
   signal_table$channel <- factor(signal_table$channel, levels = signal_identifiers)
@@ -145,7 +152,7 @@ plotThresholdedSignals <- function(spatial_signals, height, width, percentiles =
 
 # Function to plot an expected signal as a raster
 plotExpectedSignal <- function(spatial_signal, signal_identifier, height, width,
-                               denoise = TRUE, blur_radius = 1, plot_legend = TRUE) {
+                               denoise = TRUE, blur_radius = 1, option = "B", plot_legend = TRUE) {
   if (denoise) {
     spatial_signal <- gaussianBlur(spatial_signal, height = height, width = width, sigma = blur_radius)
   }
@@ -155,24 +162,25 @@ plotExpectedSignal <- function(spatial_signal, signal_identifier, height, width,
 
   # Create raster plot
   p <- ggplot(signal_table, aes(x = X, y = Y)) +
-    geom_raster(aes(fill = magnitude), interpolate = TRUE) +
-    scale_fill_viridis(name = signal_identifier, option = 'B') +
+    # geom_raster(aes(fill = magnitude), interpolate = TRUE) +
+    geom_tile(aes(fill = magnitude)) +
+    scale_fill_viridis(name = signal_identifier, option = option) +
     coord_fixed(xlim = c(0, width), ylim = c(0, height), expand = FALSE) +
     theme_dark() +
     theme(
       panel.border = element_blank(),
       panel.grid = element_blank(),
-      panel.background = element_rect(fill = 'black'),
+      panel.background = element_rect(fill = "black"),
       axis.line = element_blank(),
       axis.text = element_blank(),
       axis.ticks = element_blank(),
       axis.title = element_blank(),
-      plot.margin = margin(t = 0, r = -1, b = -2, l = -2, unit = 'mm'),
+      plot.margin = margin(t = 0, r = -1, b = -2, l = -2, unit = "mm"),
       legend.position = if (plot_legend) c(1, 0) else "none",
       legend.justification = c(1, 0),
-      legend.background = element_rect(fill = 'black'),
-      legend.title = element_text(colour = 'white', face = 'bold', size = 12),
-      legend.text = element_text(colour = 'white', size = 10)
+      legend.background = element_rect(fill = "black"),
+      legend.title = element_text(colour = "white", face = "bold", size = 12),
+      legend.text = element_text(colour = "white", size = 10)
     )
 
   return(p)
