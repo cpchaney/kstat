@@ -45,9 +45,9 @@ getMask <- function(mask_file, height, width, invert = FALSE) {
   return(sparseMatrix(i = height - mask@i, j = mask@j + 1, x = mask@x, dims = c(height, width)))
 }
 
-getExpressionData <- function(sceFile) {
+getExpressionData <- function(sceFile, assay_name = "imputed") {
   # Load single-cell experiment data
-  return(assay(readRDS(file = sceFile), "imputed"))
+  return(assay(readRDS(file = sceFile), assay_name))
 }
 
 encodeBin <- function(bin) {
@@ -121,9 +121,9 @@ gaussianBlur <- function(spatial_signal, height, width, sigma = 1) {
   blurred <- ski$filters$gaussian(spatial_matrix, sigma = sigma)
 
   # Normalize and return
-  row_maximums <- rowMaxs(blurred)
-  row_maximums[row_maximums == 0] <- 1
-  blurred <- blurred * (rowMaxs(as.matrix(spatial_signal)) / row_maximums)
+  ## row_maximums <- rowMaxs(blurred)
+  ## row_maximums[row_maximums == 0] <- 1
+  ## blurred <- blurred * (rowMaxs(as.matrix(spatial_signal)) / row_maximums)
   return(as.numeric(t(blurred)))
 }
 
