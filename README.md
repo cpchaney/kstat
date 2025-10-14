@@ -19,11 +19,11 @@ kstat/
 |-- config/ # Configuration files (JSON/YAML)
 |-- data/ # Raw and preprocessed datasets
 |-- image/ # Output images from analyses
-|-- output/ # Intermediate results
+|-- output/ # Tabular results
 |-- python/
 | |-- kstat/ # Core Python modules (e.g. preprocessing.py)
 | |-- scripts/ # Execution scripts (e.g. run_preprocessing.py)
 |-- R/ # R scripts (Seurat workflows, plotting)
-|-- sql/ # SQL queries or schemas (if applicable)
+|-- sql/ # SQL queries and schemas 
 |-- docs/ # Markdown tutorials and documentation
 |-- README.md # Project overview and quick start
