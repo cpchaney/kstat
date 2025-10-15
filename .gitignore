@@ -26,11 +26,7 @@
 *.tex
 
 # Raw data
-data/*.csv
-data/*.tsv
-data/*.xlsx
-data/*.rds
-data/*.mtx
+data/
 
 # Generated images
 image/
