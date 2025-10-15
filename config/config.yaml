@@ -1,0 +1,11 @@
+# config/config.yaml
+project_root: "/home/DX6/carrolllab/cchan4/LabNGS/projects/kstat"
+ngs_root: "/home/DX6/carrolllab/cchan4/LabNGS"
+database: cellphonedb.sqlite
+sql_query_path: sql/ligand_receptor_query.sql
+scaled_height: 926
+scaled_width: 1039
+p: 2
+blur: 1
+scaling: 0.7
+reach: 5.4
