@@ -38,6 +38,9 @@ image/
 # Logs
 *.log
 
+# Generated output
+output/
+
 # Temporary files
 *.tmp
 *.temp
