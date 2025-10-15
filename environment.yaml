@@ -1,0 +1,23 @@
+name: kstat
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - pytorch
+  - pyro-ppl
+  - scikit-learn
+  - scipy
+  - tqdm
+  - pip
+  - ipython
+  - flake8
+  - black
+  - pytest
+  - isort
+  - pandas
+  - anndata
+  - pip
+  - pip:
+    - -r requirements.txt
