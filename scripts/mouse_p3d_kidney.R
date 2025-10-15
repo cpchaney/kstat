@@ -72,9 +72,9 @@ stage <- "p3d"
 config <- here("config", str_c("mouse_", stage, ".json")) %>%
   fromJSON(file = .)
 
-sce <- readRDS(file =paste0("../kidney_development/data/mouse_",
+sce <- readRDS(file = paste0("data/mouse_",
                             stage,
-                            "_sce.rds"))
+                            "_snuc_sce.rds"))
 expression_matrix <- assay(sce, "imputed")
 
 width <- config$scaled_width
@@ -94,8 +94,9 @@ common_landmarks <- config$common_landmarks
 landmarks <- config$landmarks
 row.names(landmarks_count_matrix) <- landmarks
 
-ordered_landmarks <- read.csv(file = "data/mouse_e18.5d_cartana_genes_ordered.csv")$gene
-ordered_landmarks <- c(ordered_landmarks, setdiff(landmarks, ordered_landmarks))
+#ordered_landmarks <- read.csv(file = "data/mouse_e18.5d_cartana_genes_ordered.csv")$gene
+#ordered_landmarks <- c(ordered_landmarks, setdiff(landmarks, ordered_landmarks))
+ordered_landmarks <- landmarks[order(landmarks)]
 
 # Plot measured expression
 landmark_plots <- sapply(ordered_landmarks, function(gene_of_interest) {
@@ -439,23 +440,280 @@ composite_height <- 1 * (width / 300)
 scale_factor <- 8.5 / composite_width
 
 ggsave(
-  filename = paste0("image/",
-                    config$experiment_name,
-                    "_combined_inferred_",
-                    paste0(stringr::str_to_lower(genes_of_interest), collapse = "_"),
-                    ".tiff"),
-  # Output file name
-  plot = combined_landmark_plot,
-  # Plot object
-  device = "tiff",
-  # Save as TIFF
-  width = scale_factor * composite_width,
-  # Total width in inches
-  height = scale_factor * composite_height,
-  units = "in",
-  # Total height in inches
-  dpi = 300,                        # Resolution in DPI
-  bg = "transparent"
+        filename = paste0(
+                "image/",
+                config$experiment_name,
+                "_combined_inferred_",
+                paste0(stringr::str_to_lower(genes_of_interest), collapse = "_"),
+                ".tiff"
+        ),
+        # Output file name
+        plot = combined_landmark_plot,
+        # Plot object
+        device = "tiff",
+        # Save as TIFF
+        width = scale_factor * composite_width,
+        # Total width in inches
+        height = scale_factor * composite_height,
+        units = "in",
+        # Total height in inches
+        dpi = 300, # Resolution in DPI
+        bg = "transparent"
 )
+
+###############
+## Scale bar ##
+###############
+
+rotate90_counterclockwise <- function(img) {
+  if (length(dim(img)) == 3) {
+    apply(img, 3, function(x) t(x)[ncol(x):1, ]) |> 
+      array(dim = c(dim(img)[2], dim(img)[1], dim(img)[3]))
+  } else {
+    t(img)[ncol(img):1, ]
+  }
+}
+
+rotate90_clockwise <- function(img) {
+        if (length(dim(img)) == 3) {
+                # Color image
+                apply(img, 3, function(x) t(x)[, nrow(x):1]) |>
+                        array(dim = c(dim(img)[2], dim(img)[1], dim(img)[3]))
+        } else {
+                # Grayscale image
+                t(img)[, nrow(img):1]
+        }
+}
+
+flip_horizontal <- function(img) {
+  if (length(dim(img)) == 3) {
+    # RGB image: flip each channel
+    apply(img, 3, function(x) x[, ncol(x):1]) |>
+      array(dim = dim(img))
+  } else {
+    # Grayscale image
+    img[, ncol(img):1]
+  }
+}
+
+background_image <- jpeg::readJPEG(paste0("image/", config$experiment_name, "_background_scaled.jpg"))
+background_image <- flip_horizontal(background_image)
+background_image <- rotate90_clockwise(background_image)
+width <- ncol(background_image)
+height <- nrow(background_image)
+
+p <- ggplot() +
+      ggpubr::background_image(background_image) +
+  coord_fixed(
+    xlim = c(0, width),
+    ylim = c(0, height),
+    expand = FALSE
+  ) +
+  theme_bw() +
+  theme(
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(fill = "black"),
+    axis.line = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.ticks.length = unit(0, "pt"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    plot.margin = margin(
+      t = 0,
+      # Top margin
+      r = 0,
+      # Right margin
+      b = 0,
+      # Bottom margin
+      l = 0,
+      # Left margin
+      unit = "mm"
+    ),
+    legend.position = "none"
+  )
+
+# === Setup: constants ===
+scale_length_um <- 100
+pixel_size_um <- 2.56
+scale_length_units <- scale_length_um / pixel_size_um
+
+bar_y <- 64 # vertical position of the bar (constant y)
+bar_x_start <- 64 # where the bar starts
+bar_x_end <- bar_x_start + scale_length_units
+bar_height <- 2 # visual thickness in data units
+
+p_scale_bar <- p +
+  geom_rect(
+    aes(
+      xmin = bar_x_start,
+      xmax = bar_x_end,
+      ymin = bar_y - bar_height / 2,
+      ymax = bar_y + bar_height / 2
+    ),
+    fill = "white"
+  ) +
+  annotate("text",
+    x = (bar_x_start + bar_x_end) / 2,
+    y = bar_y - 16, # adjust below bar
+    label = paste0(scale_length_um, " µm"),
+    size = 2,
+    color = "white"
+  )
+
+ragg::agg_tiff(
+  filename = paste0(
+      "image/mouse_",
+      config[["experiment_name"]],
+      "_stat_rotated_scale_bar.tiff"
+  ),
+  width = width,
+  height = height,
+  units = "px",
+  res = 300
+)
+p_scale_bar
+dev.off()
+
+
+################################
+## snRNA-seq characterization ##
+################################
+coarse_cell_types <- as.character(sce$cell_type_short)
+coarse_cell_types[coarse_cell_types == "Pod"] <- "NE"
+
+sce$coarse_cell_type <- factor(coarse_cell_types)
+
+if (length(grep("sling", colnames(colData(sce)))) > 0) {
+  cell_table <- as(colData(sce)[, colnames(colData(sce))[-grep("sling", colnames(colData(sce)))]], "data.frame")
+} else {
+  cell_table <- as(colData(sce), "data.frame")
+}
+cell_table <- rownames_to_column(cell_table)
+cell_table <- merge(x = cell_table, y = reducedDim(sce, "UMAP")[, 1:3], by.x = "rowname", by.y = "row.names")
+colnames(cell_table)[(ncol(cell_table) - 2):ncol(cell_table)] <- paste0("UMAP_", 1:3)
+cell_table <- merge(x = cell_table, y = reducedDim(sce, "DMAP"), by.x = "rowname", by.y = "row.names")
+cell_table <- column_to_rownames(cell_table, "rowname")
+
+cell_type_short_centers <- cell_table %>%
+  group_by(cell_type_short) %>%
+  dplyr::select(UMAP_1, UMAP_2, UMAP_3) %>%
+  summarize_all(mean)
+
+cell_type_centers <- cell_table %>%
+  group_by(coarse_cell_type) %>%
+  dplyr::select(UMAP_1, UMAP_2, UMAP_3) %>%
+  summarize_all(mean)
+
+expression_matrix <- assay(sce, "imputed")
+
+cell_type_color_scale <- getFactorColors(factor(cell_table$coarse_cell_type))
+
+ggplot(cell_table, aes(x = UMAP_1, y = UMAP_3)) +
+        geom_point(aes(colour = coarse_cell_type), alpha = 1) +
+        scale_color_manual(
+                values = cell_type_color_scale,
+                name = "Cell type"
+        ) +
+        guides(color = guide_legend(override.aes = list(alpha = 1, size = 8))) +
+        theme_bw() +
+        theme(
+                panel.border = element_blank(),
+                panel.grid.major = element_blank(),
+                panel.grid.minor = element_blank(),
+                legend.title = element_text(size = 20),
+                legend.text = element_text(size = 16),
+                axis.text = element_text(size = 12),
+                axis.title = element_text(size = 20),
+                axis.line = element_line(colour = "black")
+        )
+
+ggsave(
+  filename = paste0("image/mouse_", stage, "_kidney_coarse_cell_type_umap_1_3.png"),
+  width = 11,
+  height = 8.5,
+  units = "in"
+)
+
+##################################
+## Heatmap of marker expression ##
+##################################
+## # EIGEN marker finding
+## eigen_genes <- eigen(sce,
+##   groups = "coarse_cell_type",
+##   BPPARAM = BiocParallel::MulticoreParam(workers = parallel::detectCores() - 8)
+## )
+
+## dir_path <- "output" # specify your desired directory path
+## # Create the directory if it doesn't exist
+## if (!dir.exists(dir_path)) {
+##   dir.create(dir_path, recursive = TRUE)
+## }
+## write.csv(eigen_genes,
+##   file = "output/coarse_cell_type_eigen_genes.csv",
+##   quote = FALSE
+## )
+## coarse_cell_type_markers <- eigen_genes[, -grep("p.value", colnames(eigen_genes))]
+
+## genes_of_interest <- Reduce(union, lapply(levels(sce$coarse_cell_type), function(coarse_cell_type) {
+##         row.names(coarse_cell_type_markers)[order(coarse_cell_type_markers[, coarse_cell_type])][1:6]
+## }))
+
+genes_of_interest <- intersect(
+        read.csv("data/coarse_cell_type_markers.csv", header = FALSE)$V1,
+        row.names(expression_matrix)
+)
+
+expr_df <- as.data.frame(as.matrix(t(expression_matrix[
+  genes_of_interest,
+  row.names(cell_table)
+])))
+
+meta_df <- rownames_to_column(cell_table, var = "cell_id") %>%
+  dplyr::select("cell_id", "coarse_cell_type")
+
+# 1. Add cell type to expression data
+expr_long <- expr_df %>%
+  rownames_to_column("cell_id") %>%
+  pivot_longer(-cell_id, names_to = "gene", values_to = "expression") %>%
+  inner_join(meta_df, by = "cell_id")
+
+# 2. Compute mean expression per cell type
+mean_expr <- expr_long %>%
+  group_by(coarse_cell_type, gene) %>%
+  summarize(mean_expr = mean(expression), .groups = "drop")
+
+# 3. Pivot to wide format: genes x cell types
+expr_matrix <- mean_expr %>%
+  pivot_wider(names_from = coarse_cell_type, values_from = mean_expr) %>%
+  column_to_rownames("gene") %>%
+  as.matrix()
+
+# 4. Z-score scale each gene (row-wise)
+scaled_expr <- t(scale(t(expr_matrix)))
+
+# 5. Clip to range [-3, 3]
+clipped_expr <- pmin(pmax(scaled_expr, -3), 3)
+
+# 6. Plot heatmap
+p <- pheatmap(clipped_expr,
+  cluster_rows = TRUE,
+  cluster_cols = FALSE,
+  color = viridis(100),
+  fontsize_row = 8,
+  fontsize_col = 12,
+  angle_col = 0,
+  border_color = NA,
+  main = "Marker Gene Expression by Cell Type (Z-scaled)"
+)
+
+png(paste0("image/_mouse_", stage, "_coarse_cell_type_marker_heatmap.png"), width = 2000, height = 1800, res = 300)
+p
+dev.off()
+
+
 
   
