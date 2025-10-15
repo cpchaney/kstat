@@ -29,7 +29,7 @@ Dependencies:
 - pyro
 - scikit-learn (GaussianMixture)
 - tqdm
-- statlas.utils (must define `sparsegen` for soft assignment)
+- kstat.utils (must define `sparsegen` for soft assignment)
 
 This module is designed to support downstream spatial transcriptomics analyses,
 where accurate probabilistic modeling of gene expression across spatial contexts
@@ -53,7 +53,7 @@ import tqdm
 from pyro.distributions import Normal, constraints
 from sklearn.mixture import GaussianMixture
 
-import statlas.utils
+import kstat.utils
 
 
 def fit_gmm_with_best_bic(data, min_components=2, max_components=10):
@@ -205,7 +205,7 @@ def calculate_bin_probability(
         probabilities = torch.zeros(log_probs.shape)
     else:
         probabilities = probabilities / probabilities.sum()
-        probabilities = statlas.utils.sparsegen(
+        probabilities = kstat.utils.sparsegen(
             probabilities, lambda_param=lambda_param
         )
         # probabilities = probabilities / probabilities.sum()
