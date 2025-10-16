@@ -8,20 +8,14 @@ Usage:
 """
 
 import sys
+
 import numpy as np
 import pandas as pd
-import torch
+import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
-import transforms  # ensure this is your custom transform module
-
-from kstat.preprocessing import (
-    apply_dilation,
-    load_config,
-    prepare_landmarks,
-    process_image,
-    save_config,
-    save_scaled_outputs,
-)
+from kstat.preprocessing import (apply_dilation, load_config,
+                                 prepare_landmarks, process_image, save_config,
+                                 save_scaled_outputs)
 
 
 def main(config_path: str):
@@ -39,9 +33,7 @@ def main(config_path: str):
     landmark_reads[["X", "Y"]] = landmark_reads[["X", "Y"]].apply(np.floor).astype(int)
 
     # Count number of reads per pixel
-    counts_df = (
-        landmark_reads[["X", "Y"]].value_counts().reset_index(name="counts")
-    )
+    counts_df = landmark_reads[["X", "Y"]].value_counts().reset_index(name="counts")
 
     # Merge counts back into dataframe
     landmark_reads = landmark_reads.merge(counts_df, on=["X", "Y"], how="left")
@@ -57,9 +49,7 @@ def main(config_path: str):
     # ---------------------------------------------------
     # Step 4: Generate landmark matrix (pixels × genes)
     # ---------------------------------------------------
-    landmarks_matrix = prepare_landmarks(
-        landmark_reads, padded_image_tensor, config
-    )
+    landmarks_matrix = prepare_landmarks(landmark_reads, padded_image_tensor, config)
 
     # ---------------------------------------------------
     # Step 5: Generate binary mask and dilated mask
@@ -72,10 +62,14 @@ def main(config_path: str):
     dilated_mask = apply_dilation(mask)
 
     # Resize dilated mask to scaled resolution and convert to sparse tensor
-    scaled_dilated_mask = TF.resize(
-        dilated_mask[None, :, :],  # add batch channel
-        (config["scaled_height"], config["scaled_width"]),
-    ).squeeze().to_sparse()
+    scaled_dilated_mask = (
+        TF.resize(
+            dilated_mask[None, :, :],  # add batch channel
+            (config["scaled_height"], config["scaled_width"]),
+        )
+        .squeeze()
+        .to_sparse()
+    )
 
     # ---------------------------------------------------
     # Step 6: Scale image and save outputs
