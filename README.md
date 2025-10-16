@@ -27,3 +27,11 @@ kstat/
 |-- sql/ # SQL queries and schemas 
 |-- docs/ # Markdown tutorials and documentation
 |-- README.md # Project overview and quick start
+
+## Tutorial
+
+**Reproducing the E18.5 Kidney Results**
+
+A step-by-step tutorial showing how to reproduce the results from the paper for the **E18.5 kidney** dataset is available here:  
+[docs/tutorial.md](docs/tutorial.md)
+
