@@ -33,8 +33,10 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["kstat*"]
+include = ["kstat"]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
