@@ -1,5 +1,4 @@
-# scripts/run_preprocessing.py
-
+#!/usr/bin/env python
 """
 Preprocessing pipeline for spatial landmark data and background image.
 
