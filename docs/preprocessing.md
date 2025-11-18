@@ -172,3 +172,4 @@ This function saves the following files:
     - data/mouse_e18.5d_scaled_mask.mtx
     - image/mouse_e18.5d_background_scaled.jpg
 
+[Next: Inference Pipeline](inference.md)
