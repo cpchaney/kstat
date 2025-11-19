@@ -48,9 +48,7 @@ def prepare_inputs(config, device):
     ).coalesce()
 
     # Load reference expression matrix (imputed)
-    ad = sc.read_h5ad(
-        f"{config['project_root']}../kidney_development/data/{config['experiment_name']}.h5ad"
-    )
+    ad = sc.read_h5ad(f"{config['project_root']}data/{config['experiment_name']}.h5ad")
 
     # Keep only genes with nonzero expression across all cells
     nonzero_genes = np.array(ad.layers["imputed"].sum(axis=0) > 0).flatten()
