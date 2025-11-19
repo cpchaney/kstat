@@ -6,23 +6,23 @@ Usage:
 """
 
 import time
-import torch
 
+import numpy as np
+import torch
 from kstat import model
-from kstat.probability import (
-    compute_bin_inputs,
-    load_config,
-    prepare_inputs,
-)
-from kstat.utils import row_normalize, torch_mmread
+from kstat.probability import compute_bin_inputs, load_config, prepare_inputs
+from scipy import sparse
+from scipy.io import mmwrite
+
+# from kstat.utils import row_normalize, torch_mmread
 
 # --------------------------------------------------
 # Step 1: Configuration and device setup
 # --------------------------------------------------
 
-CONFIG_PATH = "config/mouse_e18.5d.json"  # Modify path as needed
-K = 256                    # Top-k expression values per gene
-LAMBDA_PARAM = 0.1         # Regularization weight
+CONFIG_PATH = "../../config/mouse_e18.5d.json"  # Modify path as needed
+K = 256  # Top-k expression values per gene
+LAMBDA_PARAM = 0.1  # Regularization weight
 
 # Select computation device
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -77,9 +77,9 @@ mean_values, covariances = model.infer_parameters_from_mixture(
 start_time = time.time()
 
 cells_bins_probabilities = model.calculate_bin_probabilities(
-    expression_tensor=expression_tensor,
-    mean=mean_values,
-    cov=covariances,
+    expression_data=expression_tensor,
+    mean_values=mean_values,
+    covariances=covariances,
     unique_bins=unique_bins,
     lambda_param=LAMBDA_PARAM,
 )
@@ -94,5 +94,11 @@ print(f"Inference complete in {execution_time:.2f} seconds")
 # Move result to CPU for saving or downstream use
 cells_bins_probabilities = cells_bins_probabilities.cpu()
 
+cells_bins_probabilities_sparse = sparse.coo_matrix(cells_bins_probabilities.numpy())
+
 # Optionally: save to disk
 # torch.save(cells_bins_probabilities, f"{config['project_root']}output/{config['experiment_name']}_cells_bins_probabilities.pt")
+mmwrite(
+    f"{config['project_root']}output/{config['experiment_name']}_cells_bins_probabilities.mtx",
+    cells_bins_probabilities_sparse,
+)
