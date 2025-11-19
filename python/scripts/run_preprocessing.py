@@ -48,7 +48,9 @@ def main(config_path: str):
     # ---------------------------------------------------
     # Step 4: Generate landmark matrix (pixels × genes)
     # ---------------------------------------------------
-    landmarks_matrix = prepare_landmarks(landmark_reads, padded_image_tensor, config)
+    landmarks_matrix = prepare_landmarks(
+        landmark_reads, padded_image_tensor, padding, config
+    )
 
     # ---------------------------------------------------
     # Step 5: Generate binary mask and dilated mask
