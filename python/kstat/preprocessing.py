@@ -66,15 +66,17 @@ def torch_mmwrite(file_path: str, sparse_tensor: torch.Tensor):
 
 
 def prepare_landmarks(
-    landmark_reads: pd.DataFrame, image_tensor: torch.Tensor, config: dict
+    landmark_reads: pd.DataFrame,
+    image_tensor: torch.Tensor,
+    padding: torch.Tensor,
+    config: dict,
 ) -> torch.Tensor:
     """Process landmark reads and generate the landmarks sparse matrix."""
     [height, width] = image_tensor.shape[1:]
-    padding = calculate_padding(height, width, config["scale_factor"])
     padded_landmark_reads = landmark_reads.copy()
     padded_landmark_reads[["X", "Y"]] += [padding[0], padding[2]]
 
-    size = (height + padding[0] + padding[1], width + padding[2] + padding[3])
+    size = (height, width)
     tile_size = (config["scale_factor"], config["scale_factor"])
 
     landmarks = []
