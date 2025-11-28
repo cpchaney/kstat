@@ -8,6 +8,45 @@ from kstat import model
 from kstat.utils import row_normalize
 
 
+def compute_expected_expression(
+    expression_tensor, bin_probs, unique_bin_keys, support, device
+):
+    expected_expression = expression_tensor.cpu() @ bin_probs.cpu()
+    expected_expression = row_normalize(
+        expected_expression[:, unique_bin_keys[support.cpu()]]
+    )
+    return expected_expression.contiguous().to(device)
+
+
+def compute_sinkhorn_divergence(expected_expression, spatial_expression, support_loc):
+    loss_fn = SamplesLoss(loss="sinkhorn", p=2, blur=0.05, scaling=0.7)
+    n_genes = expected_expression.shape[0]
+    loss = torch.zeros(n_genes, device=expected_expression.device)
+
+    for i in tqdm.tqdm(range(n_genes), desc="Sinkhorn divergence"):
+        loss[i] = loss_fn(
+            expected_expression[i, :],
+            support_loc,
+            spatial_expression[i, :],
+            support_loc,
+        )
+
+    return loss
+
+
+def compute_cosine_similarity(expected_expression, spatial_expression, support):
+    n_genes = expected_expression.shape[0]
+    similarity = torch.zeros(n_genes)
+
+    for i in tqdm.tqdm(range(n_genes), desc="Cosine similarity"):
+        similarity[i] = torch.nn.functional.cosine_similarity(
+            expected_expression[i, :][None, :],
+            spatial_expression[i, support][None, :],
+        )
+
+    return similarity
+
+
 def run_loocv_evaluation(
     ad,
     common_landmarks,
@@ -48,7 +87,7 @@ def run_loocv_evaluation(
 
     for i, landmark in enumerate(tqdm.tqdm(common_landmarks, desc="LOOCV")):
         # Exclude current landmark
-        loo_landmarks = common_landmarks[:i] + common_landmarks[i + 1:]
+        loo_landmarks = common_landmarks[:i] + common_landmarks[i + 1 :]
 
         # Get LOOCV imputed tensor
         loo_expression_tensor = (
@@ -180,8 +219,12 @@ def save_loocv_outputs(
         )
 
         # Save outputs
-        base_path = f"{config['project_root']}data/{config['experiment_name']}_{landmark}_loocv"
-        scipy.io.mmwrite(f"{base_path}_cells_bins_probabilities.mtx", loo_probs.cpu().to_dense())
+        base_path = (
+            f"{config['project_root']}data/{config['experiment_name']}_{landmark}_loocv"
+        )
+        scipy.io.mmwrite(
+            f"{base_path}_cells_bins_probabilities.mtx", loo_probs.cpu().to_dense()
+        )
         pd.DataFrame(loo_unique_key.cpu().numpy(), columns=["index"]).to_csv(
             f"{base_path}_unique_bins_key.csv", index=False
         )
