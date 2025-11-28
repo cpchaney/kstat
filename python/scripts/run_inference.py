@@ -99,6 +99,6 @@ cells_bins_probabilities_sparse = sparse.coo_matrix(cells_bins_probabilities.num
 # Optionally: save to disk
 # torch.save(cells_bins_probabilities, f"{config['project_root']}output/{config['experiment_name']}_cells_bins_probabilities.pt")
 mmwrite(
-    f"{config['project_root']}output/{config['experiment_name']}_cells_bins_probabilities.mtx",
+    f"{config['project_root']}data/{config['experiment_name']}_cells_bins_probabilities.mtx",
     cells_bins_probabilities_sparse,
 )
