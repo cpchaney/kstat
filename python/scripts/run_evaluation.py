@@ -5,19 +5,13 @@ Usage:
     python scripts/run_evaluation.py config/mouse_e18.5d.json
 """
 
-import sys
-import torch
+import os
 
-from kstat.evaluation import (
-    compute_cosine_similarity,
-    compute_expected_expression,
-    compute_sinkhorn_divergence,
-)
-from kstat.probability import (
-    compute_bin_inputs,
-    load_config,
-    prepare_inputs,
-)
+import torch
+from kstat.evaluation import (compute_cosine_similarity,
+                              compute_expected_expression,
+                              compute_sinkhorn_divergence)
+from kstat.probability import load_config, prepare_inputs
 from kstat.utils import row_normalize, torch_mmread
 
 # --------------------------------------------------------
@@ -25,7 +19,7 @@ from kstat.utils import row_normalize, torch_mmread
 # --------------------------------------------------------
 
 # Accept config file path from command-line argument or use default
-config_path = sys.argv[1] if len(sys.argv) > 1 else "config/mouse_e18.5d.json"
+config_path = "../../config/mouse_e18.5d.json"
 config = load_config(config_path)
 
 # Use CUDA if available
@@ -51,8 +45,8 @@ masked_landmark_counts = landmark_counts.to_dense()[
 # Step 3: Load model output: cells ? spatial bins probabilities
 # --------------------------------------------------------
 
-cells_bins_probabilities = torch.load(
-    f"{config['project_root']}output/{config['experiment_name']}_cells_bins_probabilities.pt"
+cells_bins_probabilities = torch_mmread(
+    f"{config['project_root']}data/{config['experiment_name']}_cells_bins_probabilities.mtx"
 )
 
 # Map each spatial bin to a unique binary pattern index
@@ -104,11 +98,18 @@ print("Mean Sinkhorn divergence:", sinkhorn_loss.mean().item())
 print("Mean cosine similarity:", cosine_sim.mean().item())
 
 # Save full vectors to disk
+# Construct output directory path
+output_dir = os.path.join(config["project_root"], "output")
+
+# Create the directory if it doesn't exist
+os.makedirs(output_dir, exist_ok=True)
+
+# Save full vectors to disk
 torch.save(
     sinkhorn_loss.cpu(),
-    f"{config['project_root']}output/{config['experiment_name']}_sinkhorn.pt",
+    os.path.join(output_dir, f"{config['experiment_name']}_sinkhorn.pt"),
 )
 torch.save(
     cosine_sim.cpu(),
-    f"{config['project_root']}output/{config['experiment_name']}_cosine.pt",
+    os.path.join(output_dir, f"{config['experiment_name']}_cosine.pt"),
 )
