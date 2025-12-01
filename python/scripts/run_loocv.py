@@ -6,22 +6,17 @@ Usage:
 """
 
 import sys
-import torch
 
+import torch
 from kstat.evaluation import run_loocv_evaluation, save_loocv_outputs
-from kstat.probability import (
-    compute_bin_inputs,
-    load_config,
-    prepare_inputs,
-)
+from kstat.probability import compute_bin_inputs, load_config, prepare_inputs
 from kstat.utils import row_normalize, torch_mmread
 
 # -----------------------------------------------------
 # Step 1: Load configuration and set up device
 # -----------------------------------------------------
 
-# Allow optional config path via CLI
-config_path = sys.argv[1] if len(sys.argv) > 1 else "config/mouse_e18.5d.json"
+config_path = "../../config/mouse_e18.5d.json"
 config = load_config(config_path)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -43,27 +38,24 @@ expression_tensor = torch.tensor(ad.layers["imputed"].T).float().to(device)
 # Step 3: Compute bin inputs
 # -----------------------------------------------------
 
-unique_bins, support, support_loc, spatial_expression = compute_bin_inputs(
-    landmark_counts,
-    mask,
-    landmarks,
-    config["common_landmarks"],
-    ad,
-    device,
+unique_bins, unique_bins_key, support, support_loc, spatial_expression = (
+    compute_bin_inputs(
+        landmark_counts,
+        mask,
+        landmarks,
+        config["common_landmarks"],
+        ad,
+        device,
+    )
 )
 
 # -----------------------------------------------------
 # Step 4: Load model output (cell ? bin probabilities)
 # -----------------------------------------------------
 
-cells_bins_probabilities = torch.load(
-    f"{config['project_root']}output/{config['experiment_name']}_cells_bins_probabilities.pt"
+cells_bins_probabilities = torch_mmread(
+    f"{config['project_root']}data/{config['experiment_name']}_cells_bins_probabilities.mtx"
 )
-
-# Map each pixel to a unique bin index
-unique_bins_key = torch.unique(
-    (landmark_counts.to_dense() > 0).int(), dim=1, return_inverse=True
-)[1]
 
 # -----------------------------------------------------
 # Step 5: Run LOOCV evaluation
@@ -84,7 +76,7 @@ results_df = run_loocv_evaluation(
 
 # Save per-gene evaluation results
 results_df.to_csv(
-    f"{config['project_root']}data/{config['experiment_name']}_loocv_results.csv"
+    f"{config['project_root']}output/{config['experiment_name']}_loocv_results.csv"
 )
 
 # -----------------------------------------------------
