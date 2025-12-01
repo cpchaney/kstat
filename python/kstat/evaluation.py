@@ -215,7 +215,7 @@ def save_loocv_outputs(
             loo_mean,
             loo_cov,
             loo_unique_bins,
-            config["lambda"],
+            config.get("lambda", 0.1),
         )
 
         # Save outputs
@@ -232,7 +232,7 @@ def save_loocv_outputs(
     # Evaluate full model reconstructions
     landmark_losses = []
     projected = expression_tensor.cpu() @ cells_bins_probabilities
-    projected = projected[:, unique_bins_key][..., support_loc[:, 0].cpu()]
+    projected = projected[:, unique_bins_key][..., support_loc[:, 0].long().cpu()]
     projected = projected.to(expression_tensor.device)
 
     for i, landmark in enumerate(config["common_landmarks"]):
