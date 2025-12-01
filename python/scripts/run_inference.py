@@ -7,7 +7,7 @@ Usage:
 
 import time
 
-import numpy as np
+import pandas as pd
 import torch
 from kstat import model
 from kstat.probability import compute_bin_inputs, load_config, prepare_inputs
@@ -104,3 +104,14 @@ mmwrite(
     f"{config['project_root']}data/{config['experiment_name']}_cells_bins_probabilities.mtx",
     cells_bins_probabilities_sparse,
 )
+
+# Convert tensor to numpy, then to DataFrame
+df = pd.DataFrame({"index": unique_bins_key.numpy()})
+
+# Path to save the CSV file
+output_path = (
+    f"{config['project_root']}data/{config['experiment_name']}_unique_bins_key.csv"
+)
+
+# Write to CSV (without the default pandas index column)
+df.to_csv(output_path, index=False)
