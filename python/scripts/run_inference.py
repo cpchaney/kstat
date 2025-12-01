@@ -42,13 +42,15 @@ landmarks = config["landmarks"]
 # Step 3: Compute bin-related inputs for modeling
 # --------------------------------------------------
 
-unique_bins, support, support_loc, spatial_expression = compute_bin_inputs(
-    landmark_counts=landmark_counts,
-    mask=mask,
-    landmarks=landmarks,
-    common_landmarks=config["common_landmarks"],
-    ad=ad,
-    device=device,
+unique_bins, unique_bins_key, support, support_loc, spatial_expression = (
+    compute_bin_inputs(
+        landmark_counts=landmark_counts,
+        mask=mask,
+        landmarks=landmarks,
+        common_landmarks=config["common_landmarks"],
+        ad=ad,
+        device=device,
+    )
 )
 
 # --------------------------------------------------
