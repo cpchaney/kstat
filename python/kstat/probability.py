@@ -95,6 +95,10 @@ def compute_bin_inputs(landmark_counts, mask, landmarks, common_landmarks, ad, d
     # Identify all unique presence/absence patterns across spatial bins
     unique_bins, _ = torch.unique(binarized_landmarks, dim=1, return_inverse=True)
 
+    unique_bins_key = torch.unique(
+        (masked_landmark_counts.to_dense() > 0).int(), dim=1, return_inverse=True
+    )[1]
+
     # Create binary mask of active bins and convert to target device
     support = (mask.to_dense().reshape(-1) == 1).contiguous().to(device)
 
@@ -105,4 +109,10 @@ def compute_bin_inputs(landmark_counts, mask, landmarks, common_landmarks, ad, d
     spatial_expression = row_normalize(binarized_landmarks[:, support.cpu()]).float()
     spatial_expression = spatial_expression.contiguous().to(device)
 
-    return unique_bins.to(device), support, support_loc, spatial_expression
+    return (
+        unique_bins.to(device),
+        unique_bins_key,
+        support,
+        support_loc,
+        spatial_expression,
+    )
