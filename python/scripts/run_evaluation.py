@@ -18,7 +18,6 @@ from kstat.utils import row_normalize, torch_mmread
 # Step 1: Load configuration and set device
 # --------------------------------------------------------
 
-# Accept config file path from command-line argument or use default
 config_path = "../../config/mouse_e18.5d.json"
 config = load_config(config_path)
 
