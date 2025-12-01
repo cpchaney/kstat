@@ -35,3 +35,9 @@ kstat/
 A step-by-step tutorial showing how to reproduce the results from the paper for the **E18.5 kidney** dataset is available here:  
 [docs/tutorial.md](docs/tutorial.md)
 
+## Cite This Software
+
+If you use this code in your research, please cite it using the following DOI:
+
+[![DOI](https://zenodo.org/badge/904403661.svg)](https://doi.org/10.5281/zenodo.17781737)
+
